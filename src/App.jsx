@@ -5,29 +5,39 @@ import PokeCard from "./components/PokeCard";
 import { useDebounce } from "./hooks/useDebounce";
 
 function App() {
-  const [pokemons, setPokemons] = useState([]);
-  const [offset, setOffset] = useState(0);
-  const [limit, setLimit] = useState(20);
+  const [allPokemons, setAllPokemons] = useState([]);
+  const [displayedPokemons, setDisplayedPokemons] = useState([]);
+  const limitNum = 20;
+  const url = `https://pokeapi.co/api/v2/pokemon/?limit=1008&offset=0`;
+
   const [searchTerm, setSearchTerm] = useState("");
 
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
 
+  const filterDisplayedPokemonData = (
+    allPokemonsData,
+    displayedPokemons = []
+  ) => {
+    const limit = displayedPokemons.length + limitNum;
+    const array = allPokemonsData.filter(
+      (pokemon, index) => index + 1 <= limit
+    );
+    return array;
+  };
+
   useEffect(() => {
-    fetchPokeData(true);
+    fetchPokeData();
   }, []);
 
   useEffect(() => {
     handleSearchInput(debouncedSearchTerm);
   }, [debouncedSearchTerm]);
 
-  const fetchPokeData = async (isFirstFetch) => {
+  const fetchPokeData = async () => {
     try {
-      const offsetValue = isFirstFetch ? 0 : offset + limit;
-      const url = `https://pokeapi.co/api/v2/pokemon/?limit=${limit}&offset=${offsetValue}`;
       const response = await axios.get(url);
-
-      setPokemons([...pokemons, ...response.data.results]);
-      setOffset(offsetValue);
+      setAllPokemons(response.data.results);
+      setDisplayedPokemons(filterDisplayedPokemonData(response.data.results));
     } catch (error) {
       console.error(error);
     }
@@ -75,8 +85,8 @@ function App() {
       </header>
       <section className="pt-6 flex flex-col justify-content items-center overflow-auto z-0">
         <div className="flex flex-row flex-wrap gap-[16px] items-center justify-center px-2 max-w-4xl">
-          {pokemons.length > 0 ? (
-            pokemons.map(({ url, name }, index) => (
+          {displayedPokemons.length > 0 ? (
+            displayedPokemons.map(({ url, name }, index) => (
               <PokeCard key={url} url={url} name={name} />
             ))
           ) : (
@@ -86,10 +96,20 @@ function App() {
           )}
         </div>
       </section>
-      <div className="text-center" onClick={() => fetchPokeData(false)}>
-        <button className="bg-slate-800 px-6 py-2 my-4 text-base rounded-lg font-bold text-white">
-          더 보기
-        </button>
+      <div className="text-center">
+        {allPokemons.length > displayedPokemons.length &&
+          displayedPokemons.length !== 1 && (
+            <button
+              onClick={() =>
+                setDisplayedPokemons(
+                  filterDisplayedPokemonData(allPokemons, displayedPokemons)
+                )
+              }
+              className="bg-slate-800 px-6 py-2 my-4 text-base rounded-lg font-bold text-white"
+            >
+              더 보기
+            </button>
+          )}
       </div>
     </article>
   );
