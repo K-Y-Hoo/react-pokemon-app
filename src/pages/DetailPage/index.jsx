@@ -1,7 +1,10 @@
 import axios from "axios";
 import React, { useState } from "react";
 import { useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import Loading from "../../assets/Loading";
+import LessThan from "../../assets/LessThan";
+import GreaterThan from "../../assets/GreaterThan";
 
 const DetailPage = () => {
   const params = useParams();
@@ -34,12 +37,14 @@ const DetailPage = () => {
           abilities: formatPokemonAbilities(abilities),
           stats: formatPokemonStats(stats),
           DamageRelations,
+          types: types.map((type) => type.type.name),
         };
         setPokemon(formattedPokemonData);
         setIsLoading(false);
       }
     } catch (error) {
       console.error(error);
+      setIsLoading(false);
     }
   }
 
@@ -84,9 +89,49 @@ const DetailPage = () => {
     fetchPokemonData();
   }, []);
 
-  if (isLoading) return <div>...loading</div>;
+  if (isLoading) {
+    return (
+      <div
+        className={`absolute h-auto w-auto top-1/3 -translate-x-1/2 left-1/2 z-50`}
+      >
+        <Loading className={`w-12 h-12 z-50 animate-spin text-slate-900`} />
+      </div>
+    );
+  }
 
-  return <div>DetailPage</div>;
+  if (!isLoading && !pokemon) {
+    return <div>...Not found...</div>;
+  }
+
+  const img = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${pokemon?.id}.png`;
+  const bg = `bg-${pokemon?.types?.[0]}`;
+  const text = `text-${pokemon?.types?.[0]}`;
+
+  return (
+    <article className={`flex items-center gap-1 flex-col w-full`}>
+      <div
+        className={`${bg} w-auto h-full flex flex-col z-0 items-center justify-end relative overflow-hidden`}
+      >
+        {pokemon.previous && (
+          <Link
+            className={`absolute top-[40%] -translate-y-1/2 z-50 left-1`}
+            to={`/pokemon/${pokemon.previous}`}
+          >
+            <LessThan className={`w-5 h-8 p-1`} />
+          </Link>
+        )}
+        temporary description
+        {pokemon.next && (
+          <Link
+            className={`absolute top-[40%] -translate-y-1/2 z-50 right-1`}
+            to={`/pokemon/${pokemon.next}`}
+          >
+            <GreaterThan className={`w-5 h-8 p-1`} />
+          </Link>
+        )}
+      </div>
+    </article>
+  );
 };
 
 export default DetailPage;
